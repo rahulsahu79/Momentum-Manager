@@ -1,14 +1,21 @@
-import { Button } from "@/components/ui/button"
+import { Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./pages/Login";
+import SignUpPage from "./pages/Signup";
+import DashboardPage from "./pages/Dashboard";
 
-function App() {
+export default function App() {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center">
-            <Button>Click me</Button>
-            <h1 className="flex min-h-0 bg-amber-600">
-                Hello
-            </h1>
-        </div>
-    )
-}
+        <Routes>
+            {/* Default route -> Login */}
+            <Route path="/" element={<Navigate to="/login" />} />
 
-export default App
+            {/* Pages */}
+            <Route path="/login" element={<LoginPage />} />
+            
+            <Route path="/signup" element={<SignUpPage />} />
+
+            {/* 404 fallback */}
+            <Route path="*" element={<h1 className="text-center mt-10">404 Not Found</h1>} />
+        </Routes>
+    );
+}
