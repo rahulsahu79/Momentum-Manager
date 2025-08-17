@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,22 @@ import { useTheme } from "next-themes";
 export default function DashboardPage() {
     const { theme, setTheme } = useTheme();
 
-    const [tasks, setTasks] = useState([]);
+    // Load tasks from localStorage
+    const [tasks, setTasks] = useState(() => {
+        const savedTasks = localStorage.getItem("tasks");
+        return savedTasks ? JSON.parse(savedTasks) : [];
+    });
+
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         status: "In Progress",
     });
+
+    // Save tasks to localStorage whenever they change
+    useEffect(() => {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    }, [tasks]);
 
     const addTask = (e) => {
         e.preventDefault();
@@ -27,6 +37,7 @@ export default function DashboardPage() {
             status: formData.status,
             createdAt: new Date().toLocaleString(),
         };
+
         setTasks([newTask, ...tasks]);
         setFormData({ title: "", description: "", status: "In Progress" });
     };
@@ -105,7 +116,7 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Task List */}
-                <Card className="p-6">
+                <Card className="p-6 overflow-x-auto">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Tasks</h2>
 
                     {tasks.length === 0 ? (
