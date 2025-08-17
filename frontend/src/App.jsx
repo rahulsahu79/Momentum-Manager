@@ -11,8 +11,11 @@ export default function App() {
 
             {/* Pages */}
             <Route path="/login" element={<LoginPage />} />
-            
+
             <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/Dashboard" element={<DashboardPage />} />
+
+
 
             {/* 404 fallback */}
             <Route path="*" element={<h1 className="text-center mt-10">404 Not Found</h1>} />
