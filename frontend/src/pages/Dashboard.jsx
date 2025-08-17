@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useTheme } from "next-themes";
+import { User } from "lucide-react"; // profile icon
+
 
 export default function DashboardPage() {
     const { theme, setTheme } = useTheme();
@@ -49,7 +51,12 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
             {/* Navbar */}
+
             <nav className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 shadow">
+                {/* Profile Icon */}
+                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer">
+                    <User className="text-gray-700 dark:text-gray-300" size={40} />
+                </div>
                 <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">📝 To-Do Dashboard</h1>
 
                 <div className="flex items-center gap-4">
@@ -59,6 +66,8 @@ export default function DashboardPage() {
                     >
                         {theme === "dark" ? "🌞 Light" : "🌙 Dark"}
                     </Button>
+
+
 
                     <Button
                         variant="destructive"
