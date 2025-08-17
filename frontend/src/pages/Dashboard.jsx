@@ -5,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useTheme } from "next-themes";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { User } from "lucide-react"; // profile icon
 
 
 export default function DashboardPage() {
     const { theme, setTheme } = useTheme();
 
-    // Load tasks from localStorage
     const [tasks, setTasks] = useState(() => {
         const savedTasks = localStorage.getItem("tasks");
         return savedTasks ? JSON.parse(savedTasks) : [];
@@ -23,39 +24,62 @@ export default function DashboardPage() {
         status: "In Progress",
     });
 
-    // Save tasks to localStorage whenever they change
+    const [editId, setEditId] = useState(null); // ✅ Track if editing
+
     useEffect(() => {
         localStorage.setItem("tasks", JSON.stringify(tasks));
     }, [tasks]);
 
-    const addTask = (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.title) return;
+        if (!formData.title) {
+            toast.error("⚠️ Title is required!", { theme: "colored" });
+            return;
+        }
 
-        const newTask = {
-            id: Date.now(),
-            title: formData.title,
-            description: formData.description,
-            status: formData.status,
-            createdAt: new Date().toLocaleString(),
-        };
+        if (editId) {
+            // ✅ Update existing task
+            const updatedTasks = tasks.map((task) =>
+                task.id === editId ? { ...task, ...formData } : task
+            );
+            setTasks(updatedTasks);
+            setEditId(null);
+            toast.success("✏️ Task updated!", { theme: "colored" });
+        } else {
+            // ✅ Add new task
+            const newTask = {
+                id: Date.now(),
+                ...formData,
+                createdAt: new Date().toLocaleString(),
+            };
+            setTasks([newTask, ...tasks]);
+            toast.success("✅ Task added successfully!", { theme: "colored" });
+        }
 
-        setTasks([newTask, ...tasks]);
         setFormData({ title: "", description: "", status: "In Progress" });
     };
 
     const deleteTask = (id) => {
         setTasks(tasks.filter((task) => task.id !== id));
+        toast.error("🗑️ Task deleted!", { theme: "colored" });
+    };
+
+    const editTask = (task) => {
+        setFormData({
+            title: task.title,
+            description: task.description,
+            status: task.status,
+        });
+        setEditId(task.id);
     };
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-            {/* Navbar */}
 
+            {/* Navbar */}
             <nav className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 shadow">
-                {/* Profile Icon */}
                 <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer">
-                    <User className="text-gray-700 dark:text-gray-300" size={40} />
+                    <User className="text-gray-700 dark:text-gray-300" size={20} />
                 </div>
                 <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">📝 To-Do Dashboard</h1>
 
@@ -66,8 +90,6 @@ export default function DashboardPage() {
                     >
                         {theme === "dark" ? "🌞 Light" : "🌙 Dark"}
                     </Button>
-
-
 
                     <Button
                         variant="destructive"
@@ -83,9 +105,9 @@ export default function DashboardPage() {
 
             {/* Content */}
             <main className="max-w-4xl mx-auto p-6">
-                {/* Add Task Form */}
+                {/* Add / Edit Task Form */}
                 <Card className="p-6 mb-6">
-                    <form onSubmit={addTask} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <Label>Title</Label>
                             <Input
@@ -119,7 +141,7 @@ export default function DashboardPage() {
                             </Select>
                         </div>
                         <Button type="submit" className="col-span-1 sm:col-span-3 mt-2">
-                            Add Task
+                            {editId ? "Update Task" : "Add Task"}
                         </Button>
                     </form>
                 </Card>
@@ -138,7 +160,7 @@ export default function DashboardPage() {
                                     <th className="p-2 text-left">Description</th>
                                     <th className="p-2 text-left">Status</th>
                                     <th className="p-2 text-left">Created At</th>
-                                    <th className="p-2 text-center">Action</th>
+                                    <th className="p-2 text-center" colSpan={2}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -151,6 +173,15 @@ export default function DashboardPage() {
                                         <td className="p-2">{task.description}</td>
                                         <td className="p-2">{task.status}</td>
                                         <td className="p-2">{task.createdAt}</td>
+                                        <td className="p-2 text-center">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => editTask(task)}
+                                            >
+                                                Edit
+                                            </Button>
+                                        </td>
                                         <td className="p-2 text-center">
                                             <Button
                                                 variant="destructive"
