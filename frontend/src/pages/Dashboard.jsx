@@ -7,28 +7,37 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { useTheme } from "next-themes";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { User } from "lucide-react"; // profile icon
-
+import { User } from "lucide-react";
 
 export default function DashboardPage() {
     const { theme, setTheme } = useTheme();
 
-    const [tasks, setTasks] = useState(() => {
-        const savedTasks = localStorage.getItem("tasks");
-        return savedTasks ? JSON.parse(savedTasks) : [];
-    });
-
+    const [tasks, setTasks] = useState([]);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        status: "In Progress",
+        completed: false,
     });
+    const [editId, setEditId] = useState(null);
 
-    const [editId, setEditId] = useState(null); // ✅ Track if editing
-
+    // Fetch tasks from Django API
     useEffect(() => {
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-    }, [tasks]);
+        fetch("http://localhost:8000/api/tasks/") // Update your API URL
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setTasks(data);
+                } else if (Array.isArray(data.results)) {
+                    setTasks(data.results); // In case DRF uses pagination
+                } else {
+                    setTasks([]);
+                }
+            })
+            .catch(err => {
+                console.error("Error fetching tasks:", err);
+                setTasks([]);
+            });
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -38,51 +47,60 @@ export default function DashboardPage() {
         }
 
         if (editId) {
-            // ✅ Update existing task
-            const updatedTasks = tasks.map((task) =>
-                task.id === editId ? { ...task, ...formData } : task
-            );
-            setTasks(updatedTasks);
-            setEditId(null);
-            toast.success("✏️ Task updated!", { theme: "colored" });
+            // Update task
+            fetch(`http://localhost:8000/api/tasks/${editId}/`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            })
+                .then(res => res.json())
+                .then(updatedTask => {
+                    setTasks(tasks.map(t => t.id === editId ? updatedTask : t));
+                    setEditId(null);
+                    toast.success("✏️ Task updated!", { theme: "colored" });
+                });
         } else {
-            // ✅ Add new task
-            const newTask = {
-                id: Date.now(),
-                ...formData,
-                createdAt: new Date().toLocaleString(),
-            };
-            setTasks([newTask, ...tasks]);
-            toast.success("✅ Task added successfully!", { theme: "colored" });
+            // Add new task
+            fetch("http://localhost:8000/api/tasks/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            })
+                .then(res => res.json())
+                .then(newTask => {
+                    setTasks([newTask, ...tasks]);
+                    toast.success("✅ Task added successfully!", { theme: "colored" });
+                });
         }
 
-        setFormData({ title: "", description: "", status: "In Progress" });
+        setFormData({ title: "", description: "", completed: false });
     };
 
     const deleteTask = (id) => {
-        setTasks(tasks.filter((task) => task.id !== id));
-        toast.error("🗑️ Task deleted!", { theme: "colored" });
+        fetch(`http://localhost:8000/api/tasks/${id}/`, { method: "DELETE" })
+            .then(() => {
+                setTasks(tasks.filter(t => t.id !== id));
+                toast.error("🗑️ Task deleted!", { theme: "colored" });
+            });
     };
 
     const editTask = (task) => {
         setFormData({
             title: task.title,
             description: task.description,
-            status: task.status,
+            completed: task.completed,
         });
         setEditId(task.id);
     };
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-
             {/* Navbar */}
             <nav className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 shadow">
                 <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer">
                     <User className="text-gray-700 dark:text-gray-300" size={20} />
                 </div>
                 <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">📝 To-Do Dashboard</h1>
-
                 <div className="flex items-center gap-4">
                     <Button
                         variant="outline"
@@ -90,7 +108,6 @@ export default function DashboardPage() {
                     >
                         {theme === "dark" ? "🌞 Light" : "🌙 Dark"}
                     </Button>
-
                     <Button
                         variant="destructive"
                         onClick={() => {
@@ -127,8 +144,8 @@ export default function DashboardPage() {
                         <div>
                             <Label>Status</Label>
                             <Select
-                                value={formData.status}
-                                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                                value={formData.completed ? "Completed" : "In Progress"}
+                                onValueChange={(value) => setFormData({ ...formData, completed: value === "Completed" })}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select status" />
@@ -136,7 +153,6 @@ export default function DashboardPage() {
                                 <SelectContent>
                                     <SelectItem value="In Progress">In Progress</SelectItem>
                                     <SelectItem value="Completed">Completed</SelectItem>
-                                    <SelectItem value="Aborted">Aborted</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -150,9 +166,7 @@ export default function DashboardPage() {
                 <Card className="p-6 overflow-x-auto">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Tasks</h2>
 
-                    {tasks.length === 0 ? (
-                        <p className="text-gray-600 dark:text-gray-400">No tasks yet. Add one above 👆</p>
-                    ) : (
+                    {Array.isArray(tasks) && tasks.length > 0 ? (
                         <table className="w-full border-collapse">
                             <thead>
                                 <tr className="bg-gray-200 dark:bg-gray-700">
@@ -165,14 +179,11 @@ export default function DashboardPage() {
                             </thead>
                             <tbody>
                                 {tasks.map((task) => (
-                                    <tr
-                                        key={task.id}
-                                        className="border-b border-gray-300 dark:border-gray-600"
-                                    >
+                                    <tr key={task.id} className="border-b border-gray-300 dark:border-gray-600">
                                         <td className="p-2">{task.title}</td>
                                         <td className="p-2">{task.description}</td>
-                                        <td className="p-2">{task.status}</td>
-                                        <td className="p-2">{task.createdAt}</td>
+                                        <td className="p-2">{task.completed ? "Completed" : "In Progress"}</td>
+                                        <td className="p-2">{new Date(task.created_at).toLocaleString()}</td>
                                         <td className="p-2 text-center">
                                             <Button
                                                 variant="outline"
@@ -195,6 +206,8 @@ export default function DashboardPage() {
                                 ))}
                             </tbody>
                         </table>
+                    ) : (
+                        <p className="text-gray-600 dark:text-gray-400">No tasks yet. Add one above 👆</p>
                     )}
                 </Card>
             </main>
