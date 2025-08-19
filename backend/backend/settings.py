@@ -25,7 +25,8 @@ SECRET_KEY = "django-insecure-y_-v08vgf1255yp#+x)co-shpm@meos#52o-f!%*2lsj(0of@v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["momentum-manager.onrender.com", "localhost", "127.0.0.1"]
+
 
 
 # Application definition
