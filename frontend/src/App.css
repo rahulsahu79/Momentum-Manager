@@ -3,6 +3,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-color: #1f2937;
+  --secondary-text: #4b5563;
+  --icon-color: #4f46e5;
+  --table-header-bg: #e5e7eb;
+  --table-row-border: #d1d5db;
+}
+
+[data-theme="dark"] {
+  --bg-color: #111827;
+  --card-bg: #1f2937;
+  --text-color: #f9fafb;
+  --secondary-text: #d1d5db;
+  --icon-color: #facc15;
+  --table-header-bg: #374151;
+  --table-row-border: #4b5563;
+}
+
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
