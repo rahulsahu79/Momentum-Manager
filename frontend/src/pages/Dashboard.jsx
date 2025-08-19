@@ -8,7 +8,7 @@ import { useTheme } from "next-themes";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { User } from "lucide-react";
-
+0
 export default function DashboardPage() {
   const { theme, setTheme } = useTheme();
   const API_URL = import.meta.env.VITE_API_URL + "/api/tasks/";
@@ -97,7 +97,7 @@ export default function DashboardPage() {
           >
             {theme === "dark" ? "🌞 Light" : "🌙 Dark"}
           </Button>
-          <Button
+          <Button className='text-black-700'
             variant="destructive"
             onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
           >
