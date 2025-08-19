@@ -11,6 +11,7 @@ import { User } from "lucide-react";
 
 export default function DashboardPage() {
     const { theme, setTheme } = useTheme();
+    const API_URL = import.meta.env.VITE_API_URL + "/api/tasks/";
 
     const [tasks, setTasks] = useState([]);
     const [formData, setFormData] = useState({
@@ -20,18 +21,14 @@ export default function DashboardPage() {
     });
     const [editId, setEditId] = useState(null);
 
-    // Fetch tasks from Django API
+    // Fetch tasks from live API
     useEffect(() => {
-        fetch("http://localhost:8000/api/tasks/") // Update your API URL
+        fetch(API_URL)
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) {
-                    setTasks(data);
-                } else if (Array.isArray(data.results)) {
-                    setTasks(data.results); // In case DRF uses pagination
-                } else {
-                    setTasks([]);
-                }
+                if (Array.isArray(data)) setTasks(data);
+                else if (Array.isArray(data.results)) setTasks(data.results);
+                else setTasks([]);
             })
             .catch(err => {
                 console.error("Error fetching tasks:", err);
@@ -47,37 +44,35 @@ export default function DashboardPage() {
         }
 
         if (editId) {
-            // Update task
-            fetch(`http://localhost:8000/api/tasks/${editId}/`, {
+            fetch(`${API_URL}${editId}/`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
             })
-                .then(res => res.json())
-                .then(updatedTask => {
-                    setTasks(tasks.map(t => t.id === editId ? updatedTask : t));
-                    setEditId(null);
-                    toast.success("✏️ Task updated!", { theme: "colored" });
-                });
+            .then(res => res.json())
+            .then(updatedTask => {
+                setTasks(tasks.map(t => t.id === editId ? updatedTask : t));
+                setEditId(null);
+                toast.success("✏️ Task updated!", { theme: "colored" });
+            });
         } else {
-            // Add new task
-            fetch("http://localhost:8000/api/tasks/", {
+            fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
             })
-                .then(res => res.json())
-                .then(newTask => {
-                    setTasks([newTask, ...tasks]);
-                    toast.success("✅ Task added successfully!", { theme: "colored" });
-                });
+            .then(res => res.json())
+            .then(newTask => {
+                setTasks([newTask, ...tasks]);
+                toast.success("✅ Task added successfully!", { theme: "colored" });
+            });
         }
 
         setFormData({ title: "", description: "", completed: false });
     };
 
     const deleteTask = (id) => {
-        fetch(`http://localhost:8000/api/tasks/${id}/`, { method: "DELETE" })
+        fetch(`${API_URL}${id}/`, { method: "DELETE" })
             .then(() => {
                 setTasks(tasks.filter(t => t.id !== id));
                 toast.error("🗑️ Task deleted!", { theme: "colored" });
@@ -95,34 +90,25 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-            {/* Navbar */}
             <nav className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 shadow">
                 <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer">
                     <User className="text-gray-700 dark:text-gray-300" size={20} />
                 </div>
                 <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">📝 To-Do Dashboard</h1>
                 <div className="flex items-center gap-4">
-                    <Button
-                        variant="outline"
-                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    >
+                    <Button variant="outline" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                         {theme === "dark" ? "🌞 Light" : "🌙 Dark"}
                     </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={() => {
-                            localStorage.removeItem("token");
-                            window.location.href = "/login";
-                        }}
-                    >
+                    <Button variant="destructive" onClick={() => {
+                        localStorage.removeItem("token");
+                        window.location.href = "/login";
+                    }}>
                         Logout
                     </Button>
                 </div>
             </nav>
 
-            {/* Content */}
             <main className="max-w-4xl mx-auto p-6">
-                {/* Add / Edit Task Form */}
                 <Card className="p-6 mb-6">
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
@@ -162,10 +148,8 @@ export default function DashboardPage() {
                     </form>
                 </Card>
 
-                {/* Task List */}
                 <Card className="p-6 overflow-x-auto">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Tasks</h2>
-
                     {Array.isArray(tasks) && tasks.length > 0 ? (
                         <table className="w-full border-collapse">
                             <thead>
@@ -185,22 +169,10 @@ export default function DashboardPage() {
                                         <td className="p-2">{task.completed ? "Completed" : "In Progress"}</td>
                                         <td className="p-2">{new Date(task.created_at).toLocaleString()}</td>
                                         <td className="p-2 text-center">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => editTask(task)}
-                                            >
-                                                Edit
-                                            </Button>
+                                            <Button variant="outline" size="sm" onClick={() => editTask(task)}>Edit</Button>
                                         </td>
                                         <td className="p-2 text-center">
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => deleteTask(task.id)}
-                                            >
-                                                Delete
-                                            </Button>
+                                            <Button variant="destructive" size="sm" onClick={() => deleteTask(task.id)}>Delete</Button>
                                         </td>
                                     </tr>
                                 ))}
